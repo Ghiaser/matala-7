@@ -32,7 +32,7 @@ class GraphicalCakeDivider:
 
     def _guaranteed_third_division(self) -> Dict[int, List[Tuple[int, int, float]]]:
         edges = list(self.graph.edges())
-        sorted_edges = sorted(edges, key=lambda e: sum(self.valuations[0].get((min(e), max(e)), 0) +
+        sorted_edges = sorted(edges, key=lambda e: (self.valuations[0].get((min(e), max(e)), 0) +
                                                        self.valuations[1].get((min(e), max(e)), 0)), reverse=True)
 
         allocation = {0: [], 1: []}
