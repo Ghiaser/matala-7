@@ -1,56 +1,56 @@
 import networkx as nx
-from typing import Dict, List, Tuple
 
 class GraphicalCakeDivider:
-    def __init__(self, graph: nx.Graph, valuations: List[Dict[Tuple[int, int], float]]):
-        self.graph = graph.copy()
-        self.valuations = valuations  # List of dictionaries per agent
-        self.num_agents = len(valuations)
+    def __init__(self, graph, valuations):
+        self.graph = graph
+        self.valuations = valuations
 
-    def divide(self) -> Dict[int, List[Tuple[int, int, float]]]:
-        if not nx.is_connected(self.graph):
-            raise ValueError("Graph must be connected")
-
-        if not nx.has_bridges(self.graph):
+    def divide(self):
+        if nx.is_connected(self.graph) and nx.bridges(self.graph) == []:
             return self._proportional_division()
-        else:
-            return self._guaranteed_third_division()
+        return self._guaranteed_third_division()
 
-    def _proportional_division(self) -> Dict[int, List[Tuple[int, int, float]]]:
+    def _proportional_division(self):
         edges = list(self.graph.edges())
-        allocation = {i: [] for i in range(self.num_agents)}
-        for i, e in enumerate(edges):
-            u, v = e
-            e = (min(u, v), max(u, v))
-            for a in range(self.num_agents):
-                if e not in self.valuations[a]:
-                    self.valuations[a][e] = 0.0
-            agent = i % self.num_agents
-            val = self.valuations[agent][e]
-            allocation[agent].append((e[0], e[1], val))
-        return allocation
+        assignment = [[], []]
+        turn = 0
+        for e in edges:
+            assignment[turn].append(e)
+            turn = 1 - turn
+        return assignment
 
-    def _guaranteed_third_division(self) -> Dict[int, List[Tuple[int, int, float]]]:
+    def _guaranteed_third_division(self):
         edges = list(self.graph.edges())
-        sorted_edges = sorted(edges, key=lambda e: (self.valuations[0].get((min(e), max(e)), 0) +
-                                                       self.valuations[1].get((min(e), max(e)), 0)), reverse=True)
-
-        allocation = {0: [], 1: []}
-        assigned = set()
-        G0, G1 = nx.Graph(), nx.Graph()
-        G0.add_nodes_from(self.graph.nodes())
+        sorted_edges = sorted(
+            edges,
+            key=lambda e: self.valuations[0].get((min(e), max(e)), 0) +
+                          self.valuations[1].get((min(e), max(e)), 0),
+            reverse=True
+        )
+        assignment = [set(), set()]
+        G1 = nx.Graph()
+        G2 = nx.Graph()
         G1.add_nodes_from(self.graph.nodes())
+        G2.add_nodes_from(self.graph.nodes())
 
         for e in sorted_edges:
-            u, v = e
-            e = (min(u, v), max(u, v))
-            if e in assigned:
-                continue
-            val0 = self.valuations[0].get(e, 0)
-            val1 = self.valuations[1].get(e, 0)
-            agent = 0 if val0 >= val1 else 1
-            assigned.add(e)
-            (G0 if agent == 0 else G1).add_edge(*e)
-            allocation[agent].append((e[0], e[1], self.valuations[agent][e]))
+            val1 = self.valuations[0].get((min(e), max(e)), 0)
+            val2 = self.valuations[1].get((min(e), max(e)), 0)
+            if val1 >= val2:
+                G1.add_edge(*e)
+                if nx.is_connected(G1):
+                    assignment[0].add(e)
+                else:
+                    G1.remove_edge(*e)
+                    G2.add_edge(*e)
+                    assignment[1].add(e)
+            else:
+                G2.add_edge(*e)
+                if nx.is_connected(G2):
+                    assignment[1].add(e)
+                else:
+                    G2.remove_edge(*e)
+                    G1.add_edge(*e)
+                    assignment[0].add(e)
 
-        return allocation
+        return [list(assignment[0]), list(assignment[1])]
