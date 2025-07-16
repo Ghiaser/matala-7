@@ -1,7 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for
 import networkx as nx
 import random
+import logging
 from algorithm import GraphicalCakeDivider
+
+# הגדרת לוגים לקובץ
+logging.basicConfig(filename='logs.txt', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -69,8 +74,10 @@ def index():
                 divider = GraphicalCakeDivider(G, [val1, val2])
                 division = divider.divide()
                 result = format_result(division, [val1, val2])
+                logger.info("Manual input processed successfully")
                 return render_template("result.html", result=result)
             except Exception as e:
+                logger.error("Error during manual input: %s", str(e))
                 return render_template("index.html", error=f"שגיאה: {str(e)}")
 
         elif mode == "random":
@@ -80,8 +87,10 @@ def index():
                 divider = GraphicalCakeDivider(G, [val1, val2])
                 division = divider.divide()
                 result = format_result(division, [val1, val2])
+                logger.info("Random input processed successfully")
                 return render_template("result.html", result=result)
             except Exception as e:
+                logger.error("Error during random input: %s", str(e))
                 return render_template("index.html", error=f"שגיאה: {str(e)}")
 
     return render_template("index.html")
