@@ -6,17 +6,34 @@ class GraphicalCakeDivider:
         self.valuations = valuations
 
     def divide(self):
-        if nx.is_connected(self.graph) and nx.bridges(self.graph) == []:
+        if nx.is_connected(self.graph) and len(list(nx.bridges(self.graph))) == 0:
             return self._proportional_division()
         return self._guaranteed_third_division()
 
     def _proportional_division(self):
         edges = list(self.graph.edges())
         assignment = [[], []]
+        Gs = [nx.Graph(), nx.Graph()]
+        for G in Gs:
+            G.add_nodes_from(self.graph.nodes())
+
         turn = 0
         for e in edges:
-            assignment[turn].append(e)
+            Gs[turn].add_edge(*e)
+            if nx.is_connected(Gs[turn]):
+                assignment[turn].append(e)
+            else:
+                Gs[turn].remove_edge(*e)
+                other = 1 - turn
+                Gs[other].add_edge(*e)
+                assignment[other].append(e)
             turn = 1 - turn
+
+        # Ensure no agent gets empty set
+        for i in range(2):
+            if len(assignment[i]) == 0 and len(assignment[1 - i]) > 1:
+                assignment[i].append(assignment[1 - i].pop())
+
         return assignment
 
     def _guaranteed_third_division(self):
