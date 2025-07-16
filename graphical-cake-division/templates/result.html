@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>תוצאת החלוקה</title>
+</head>
+<body>
+  <h1>תוצאה: חלוקת הקשתות בין הסוכנים</h1>
+
+  {% for agent, edges in result.items() %}
+    <h2>סוכן {{ agent + 1 }}</h2>
+    <ul>
+      {% for u, v, val in edges %}
+        <li>קשת ({{ u }}, {{ v }}) – ערך: {{ val }}</li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+
+  <a href="/">⬅ חזור</a>
+</body>
+</html>
