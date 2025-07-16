@@ -13,7 +13,7 @@
 
 ## מבנה הקבצים בפרויקט
 
-```plaintext
+```graphical-cake-division
 ├── algorithm.py             # האלגוריתם שמבצע את חלוקת הגרף
 ├── test_algorithm.py        # בדיקות תקינות של האלגוריתם
 ├── app.py                   # שרת Flask להפעלת ממשק גרפי
