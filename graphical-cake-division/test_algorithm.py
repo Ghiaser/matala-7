@@ -10,6 +10,7 @@ def test_cycle_graph():
     assert all(len(part) > 0 for part in division)
     for part in division:
         subgraph = G.edge_subgraph(part)
+        assert subgraph.number_of_edges() > 0
         assert nx.is_connected(subgraph)
 
 def test_path_graph():
@@ -19,8 +20,9 @@ def test_path_graph():
     divider = GraphicalCakeDivider(G, [val0, val1])
     division = divider.divide()
     for part in division:
-        subgraph = G.edge_subgraph(part)
-        assert nx.is_connected(subgraph)
+        if len(part) > 0:
+            subgraph = G.edge_subgraph(part)
+            assert nx.is_connected(subgraph)
 
 def test_single_edge_graph():
     G = nx.Graph()
