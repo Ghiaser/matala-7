@@ -50,7 +50,7 @@ def run_experiments(num_runs=100, num_nodes=6, prob=0.5, output_file="results.cs
                 elapsed, round(total1, 3), round(total2, 3)
             ])
 
-    print(f"✅ {num_runs} runs completed. Results saved to {output_file}")
+    print(f" {num_runs} runs completed. Results saved to {output_file}")
 
 
 if __name__ == "__main__":
