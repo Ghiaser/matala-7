@@ -6,7 +6,7 @@ This repository hosts the **Graphical Cake Division** algorithm and a web-based 
 ## 📚 About the Algorithm
 
 The **Graphical Cake Division algorithm** implements a fair division protocol based on the paper:
-["Fair and Efficient Division Among Graph-Connected Agents"](https://arxiv.org/abs/1910.14129)
+[file:///C:/Users/ghias/Downloads/1910.14129v1%20(1)%20(1).pdf)
 by Avinatan Hassidim, Shahar Dobzinski, et al.
 
 It is designed to divide edges of a graph between two agents with individual valuations while ensuring:
