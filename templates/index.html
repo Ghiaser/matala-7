@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>חלוקה הוגנת של גרף</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 800px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            direction: ltr;
+            font-family: monospace;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background: #007bff;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .footer {
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>חלוקה הוגנת של גרף</h1>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST">
+            <input type="hidden" name="mode" value="manual">
+            <label>קשתות הגרף (a b)</label><br>
+            <textarea name="edges" placeholder="למשל:
+0 1
+1 2
+2 3
+0 3"></textarea><br>
+
+            <label>ערכים של סוכן 1 (a b value)</label><br>
+            <textarea name="val1" placeholder="למשל:
+0 1 0.3
+1 2 0.3
+2 3 0.4
+0 3 0.0"></textarea><br>
+
+            <label>ערכים של סוכן 2 (a b value)</label><br>
+            <textarea name="val2" placeholder="למשל:
+0 1 0.4
+1 2 0.3
+2 3 0.3
+0 3 0.0"></textarea><br>
+
+            <input type="submit" value="בצע חלוקה">
+        </form>
+
+        <hr>
+
+        <form method="POST">
+            <input type="hidden" name="mode" value="random">
+            <input type="submit" value="צור קלט אקראי ובצע חלוקה">
+        </form>
+
+        <div class="footer">
+            <a href="{{ url_for('about') }}">למידע נוסף על האלגוריתם</a>
+        </div>
+    </div>
+</body>
+</html>
