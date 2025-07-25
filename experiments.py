@@ -4,6 +4,7 @@ import random
 import networkx as nx
 import matplotlib.pyplot as plt
 from algorithm import GraphicalCakeDivider
+from performance_improvement.improved_algorithm import FastGraphicalCakeDivider  # ✅ חדש
 
 def generate_random_connected_graph(n, p=0.5):
     while True:
@@ -42,28 +43,34 @@ def run_experiments(output_csv="experiments/results.csv", sizes=[10, 20, 30, 40,
                 val1, val2 = generate_random_vertex_valuations(G)
                 agents = [val1, val2]
 
-                # Run original algorithm
+                # Original
                 start = time.time()
                 divider = GraphicalCakeDivider(G, agents)
                 division = divider.divide()
                 runtime = time.time() - start
-
                 val0 = compute_agent_value(division[0], val1)
                 val1_val = compute_agent_value(division[1], val2)
                 writer.writerow([n, "original", runtime, val0, val1_val, min(val0, val1_val)])
 
-                # Run baseline: random partition
+                # Improved 
+                start = time.time()
+                fast_divider = FastGraphicalCakeDivider(G, agents)
+                division_fast = fast_divider.divide()
+                runtime_fast = time.time() - start
+                val0_f = compute_agent_value(division_fast[0], val1)
+                val1_f = compute_agent_value(division_fast[1], val2)
+                writer.writerow([n, "improved", runtime_fast, val0_f, val1_f, min(val0_f, val1_f)])
+
+                # Random
                 start = time.time()
                 rand_div = random_edge_partition(G)
                 runtime_rand = time.time() - start
-
                 val0_rand = compute_agent_value(rand_div[0], val1)
                 val1_rand = compute_agent_value(rand_div[1], val2)
                 writer.writerow([n, "random", runtime_rand, val0_rand, val1_rand, min(val0_rand, val1_rand)])
 
 def plot_results(csv_file="experiments/results.csv"):
     import pandas as pd
-
     df = pd.read_csv(csv_file)
     grouped = df.groupby(["n", "method"]).mean().reset_index()
 
@@ -83,4 +90,4 @@ def plot_results(csv_file="experiments/results.csv"):
 if __name__ == "__main__":
     run_experiments()
     plot_results()
-    print("✅ Experiments completed.")
+    print(" Experiments completed.")
