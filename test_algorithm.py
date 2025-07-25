@@ -160,4 +160,4 @@ if __name__ == "__main__":
    test_big_cycle_graph()
    test_big_path_graph()
    test_big_star_graph()
-   print("✅ All tests including failures and edge cases ran.")
+   print(" All tests including failures and edge cases ran.")
