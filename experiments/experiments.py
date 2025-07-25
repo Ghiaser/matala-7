@@ -3,8 +3,7 @@ import csv
 import random
 import networkx as nx
 import matplotlib.pyplot as plt
-from algorithm import GraphicalCakeDivider
-from performance_improvement.improved_algorithm import FastGraphicalCakeDivider  # ✅ חדש
+from algorithm import contiguous_oriented_labeling
 
 def generate_random_connected_graph(n, p=0.5):
     while True:
@@ -43,34 +42,36 @@ def run_experiments(output_csv="experiments/results.csv", sizes=[10, 20, 30, 40,
                 val1, val2 = generate_random_vertex_valuations(G)
                 agents = [val1, val2]
 
-                # Original
+                # Run contiguous_oriented_labeling algorithm
                 start = time.time()
-                divider = GraphicalCakeDivider(G, agents)
-                division = divider.divide()
+                labeling = contiguous_oriented_labeling(G)
                 runtime = time.time() - start
+
+                if labeling is None:
+                    print(f"⚠️ Skipping graph with n={n} due to labeling failure")
+                    continue
+
+                # Convert labeling to list of edges
+                edges = [(src, dst) for (_, src, dst) in labeling]
+                half = len(edges) // 2
+                division = [edges[:half], edges[half:]]
+
                 val0 = compute_agent_value(division[0], val1)
                 val1_val = compute_agent_value(division[1], val2)
                 writer.writerow([n, "original", runtime, val0, val1_val, min(val0, val1_val)])
 
-                # Improved 
-                start = time.time()
-                fast_divider = FastGraphicalCakeDivider(G, agents)
-                division_fast = fast_divider.divide()
-                runtime_fast = time.time() - start
-                val0_f = compute_agent_value(division_fast[0], val1)
-                val1_f = compute_agent_value(division_fast[1], val2)
-                writer.writerow([n, "improved", runtime_fast, val0_f, val1_f, min(val0_f, val1_f)])
-
-                # Random
+                # Run baseline: random partition
                 start = time.time()
                 rand_div = random_edge_partition(G)
                 runtime_rand = time.time() - start
+
                 val0_rand = compute_agent_value(rand_div[0], val1)
                 val1_rand = compute_agent_value(rand_div[1], val2)
                 writer.writerow([n, "random", runtime_rand, val0_rand, val1_rand, min(val0_rand, val1_rand)])
 
 def plot_results(csv_file="experiments/results.csv"):
     import pandas as pd
+
     df = pd.read_csv(csv_file)
     grouped = df.groupby(["n", "method"]).mean().reset_index()
 
