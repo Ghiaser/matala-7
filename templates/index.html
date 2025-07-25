@@ -1,95 +1,210 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <title>חלוקה הוגנת של גרף</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            direction: rtl;
-            background-color: #f4f4f4;
-            padding: 20px;
-        }
-        .container {
-            background: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 800px;
-            margin: auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-        }
-        textarea {
-            width: 100%;
-            height: 120px;
-            direction: ltr;
-            font-family: monospace;
-        }
-        input[type="submit"] {
-            padding: 10px 20px;
-            background: #007bff;
-            border: none;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .footer {
-            margin-top: 20px;
-        }
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>חלוקה הוגנת של גרף</title>
+  <script src="https://unpkg.com/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 900px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      direction: ltr;
+      font-family: monospace;
+    }
+    input[type="submit"], button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+      margin-left: 10px;
+    }
+    input[type="number"] {
+      padding: 6px;
+      width: 60px;
+      margin-right: 10px;
+    }
+    label.inline {
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .graph-container {
+      height: 400px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-top: 20px;
+    }
+    .footer {
+      margin-top: 20px;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    pre {
+      background: #eee;
+      padding: 10px;
+      border-radius: 6px;
+      direction: ltr;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>חלוקה הוגנת של גרף</h1>
+  <div class="container">
+    <h1>חלוקה הוגנת של גרף</h1>
 
-        {% if error %}
-            <p class="error">{{ error }}</p>
-        {% endif %}
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
 
-        <form method="POST">
-            <input type="hidden" name="mode" value="manual">
-            <label>קשתות הגרף (a b)</label><br>
-            <textarea name="edges" placeholder="למשל:
-0 1
-1 2
-2 3
-0 3"></textarea><br>
+    <form method="POST" id="manual-form">
+      <input type="hidden" name="mode" value="manual">
 
-            <label>ערכים של סוכן 1 (a b value)</label><br>
-            <textarea name="val1" placeholder="למשל:
-0 1 0.3
-1 2 0.3
-2 3 0.4
-0 3 0.0"></textarea><br>
+      <label>קשתות הגרף (a b):</label><br />
+      <textarea name="edges" id="edges-input" placeholder="0 1\n1 2\n2 3\n0 3">{{ edges_text|default('') }}</textarea><br />
 
-            <label>ערכים של סוכן 2 (a b value)</label><br>
-            <textarea name="val2" placeholder="למשל:
-0 1 0.4
-1 2 0.3
-2 3 0.3
-0 3 0.0"></textarea><br>
+      <label>ערכים של סוכן 1 (קודקוד ערך):</label><br />
+      <textarea name="val1" id="val1-input" placeholder="A 0.3\nB 0.5\nC 0.2">{{ val1_text|default('') }}</textarea><br />
 
-            <input type="submit" value="בצע חלוקה">
-        </form>
+      <label>ערכים של סוכן 2 (קודקוד ערך):</label><br />
+      <textarea name="val2" id="val2-input" placeholder="A 0.4\nB 0.3\nC 0.3">{{ val2_text|default('') }}</textarea><br />
 
-        <hr>
+      <label class="inline">מספר קודקודים אקראי:</label>
+      <input type="number" id="random-node-count" value="5" min="2" max="20" />
+      <br />
 
-        <form method="POST">
-            <input type="hidden" name="mode" value="random">
-            <input type="submit" value="צור קלט אקראי ובצע חלוקה">
-        </form>
+      <input type="submit" value="חשב חלוקה">
+      <button type="button" onclick="generateClientRandom()">צור גרף אקראי</button>
+    </form>
 
-        <div class="footer">
-            <a href="{{ url_for('about') }}">למידע נוסף על האלגוריתם</a>
-        </div>
+    <div class="graph-container" id="network"></div>
+
+    {% if result %}
+      <hr />
+      <h3>תוצאה:</h3>
+      <pre>{{ result }}</pre>
+    {% endif %}
+
+    <div class="footer">
+      <a href="{{ url_for('about') }}">למידע נוסף</a>
     </div>
+  </div>
+
+  <script>
+    const edgesInput = document.getElementById("edges-input");
+    const val1Input = document.getElementById("val1-input");
+    const val2Input = document.getElementById("val2-input");
+    const nodeCountInput = document.getElementById("random-node-count");
+    const container = document.getElementById("network");
+
+    function drawGraph(edgeText) {
+      const lines = edgeText.trim().split("\n");
+      const edges = [];
+      const nodes = new Set();
+
+      for (const line of lines) {
+        const [a, b] = line.trim().split(/\s+/);
+        if (!a || !b) continue;
+        edges.push({ from: a, to: b });
+        nodes.add(a);
+        nodes.add(b);
+      }
+
+      const data = {
+        nodes: Array.from(nodes).map(id => ({ id, label: id })),
+        edges
+      };
+
+      const options = {
+        nodes: {
+          shape: "dot",
+          size: 16,
+          color: "#007bff",
+          font: { size: 16 }
+        },
+        edges: {
+          arrows: "to",
+          color: { color: "#aaa" }
+        },
+        physics: { stabilization: true }
+      };
+
+      new vis.Network(container, data, options);
+    }
+
+    edgesInput.addEventListener("input", () => drawGraph(edgesInput.value));
+    if (edgesInput.value.trim()) drawGraph(edgesInput.value);
+
+    function generateClientRandom() {
+      const numNodes = parseInt(nodeCountInput.value) || 5;
+      const edgeProb = 0.5;
+      const maxTries = 20;
+
+      for (let t = 0; t < maxTries; t++) {
+        const edges = [];
+        const nodes = Array.from({ length: numNodes }, (_, i) => i.toString());
+
+        for (let i = 0; i < numNodes; i++) {
+          for (let j = i + 1; j < numNodes; j++) {
+            if (Math.random() < edgeProb) edges.push([nodes[i], nodes[j]]);
+          }
+        }
+
+        const G = {};
+        nodes.forEach(n => G[n] = []);
+        edges.forEach(([u, v]) => {
+          G[u].push(v);
+          G[v].push(u);
+        });
+
+        const visited = new Set();
+        const stack = [nodes[0]];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!visited.has(node)) {
+            visited.add(node);
+            G[node].forEach(n => !visited.has(n) && stack.push(n));
+          }
+        }
+
+        if (visited.size === numNodes) {
+          const edgeText = edges.map(([u, v]) => `${u} ${v}`).join("\n");
+          edgesInput.value = edgeText;
+          drawGraph(edgeText);
+
+          let val1Text = "";
+          let val2Text = "";
+          nodes.forEach(n => {
+            const v1 = (Math.random()).toFixed(2);
+            const v2 = (Math.random()).toFixed(2);
+            val1Text += `${n} ${v1}\n`;
+            val2Text += `${n} ${v2}\n`;
+          });
+          val1Input.value = val1Text.trim();
+          val2Input.value = val2Text.trim();
+
+          return;
+        }
+      }
+
+      alert("נכשל ביצירת גרף קשיר. נסה שוב.");
+    }
+  </script>
 </body>
 </html>

@@ -4,6 +4,8 @@
 This repository hosts the **Graphical Cake Division** algorithm and a web-based interface to interact with it.
 
 ## 📚 About the Algorithm
+גרף ללא גשרים:
+הוא נשאר קשיר גם אם תסיר קשת כלשהי
 
 The **Graphical Cake Division algorithm** implements a fair division protocol based on the paper:
 [file:///C:/Users/ghias/Downloads/1910.14129v1%20(1)%20(1).pdf)
