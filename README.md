@@ -25,7 +25,8 @@ Results are saved in CSV and shown in graphs.
 pip install matplotlib pandas networkx
 
 2. Run the experiment script:
- python experiments/experiments.py   
+ python -m experiments.experiments
+ 
 
 3. This generates:
 - results.csv  
