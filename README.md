@@ -1,72 +1,90 @@
+# Graphical Cake Division — חלוקה הוגנת של גרף
 
-# Graphical Cake Division 🍰
+זהו אתר Flask להדגמה של אלגוריתם לחלוקה הוגנת של גרף לפי המאמר "Fair Division of Graphs" (Cohen et al).  
+המערכת מאפשרת להזין או ליצור גרף, להגדיר ערכים לפי קודקודים לשני סוכנים, ולקבל פלט של חלוקה הוגנת של הקשתות באמצעות תיוג רציף וסימולציית סכין.
 
-This repository hosts the **Graphical Cake Division** algorithm and a web-based interface to interact with it.
+ הדגמה חיה:  
+🔗 http://10.112.4.121:5050/
 
-## 📚 About the Algorithm
-גרף ללא גשרים:
-הוא נשאר קשיר גם אם תסיר קשת כלשהי
+---
 
-The **Graphical Cake Division algorithm** implements a fair division protocol based on the paper:
-[file:///C:/Users/ghias/Downloads/1910.14129v1%20(1)%20(1).pdf)
-by Avinatan Hassidim, Shahar Dobzinski, et al.
+## סקירה אלגוריתמית
 
-It is designed to divide edges of a graph between two agents with individual valuations while ensuring:
+1. תיוג רציף של הקשתות — Contiguous Oriented Labeling  
+   מיושם בקובץ algorithm.py. תיוג הקשתות מתבצע לפי ear decomposition ומחזיר רשימת קשתות מכוונות עם מספרים סידוריים.
 
-- 🟢 Fairness: If the graph has no bridges, each agent gets at least ½ of their total value; otherwise, at least ⅓.
-- 🔗 Connectivity: Each agent receives a connected subgraph.
-- ⚙️ Efficiency: Edge values are allocated greedily based on total valuation.
+2. חלוקה הוגנת — Cake Division  
+   מיושם בקובץ app.py לפי ערכים של קודקודים. סימולציית סכין מתבצעת לפי הערך המצטבר של הקשתות, כאשר כל קשת מקבלת את סכום הערכים של שני הקודקודים שלה.
 
-## 🧠 About the Code
+---
 
-This project is written in Python and includes:
+##  תכונות עיקריות
 
-- `algorithm.py`: The core implementation with the `GraphicalCakeDivider` class.
-- `test_algorithm.py`: A set of unit tests using `pytest` for verifying correctness.
-- `app.py`: A simple Flask web server with a form-based UI.
-- `templates/`: HTML templates for the web interface (index, result, about).
-- `requirements.txt`: Lists required Python packages.
+-  הזנת גרף ידנית
+-  יצירת גרף אקראי (עם שליטה על מספר הקודקודים)
+-  הזנת ערכים לפי קודקוד לשני סוכנים
+-  תצוגת גרף גרפית (vis.js)
+-  תצוגת פלט ישירה ללא מעבר לעמוד אחר
+-   ממשק מלא בעברית
 
-### Dependencies:
+---
 
-- Python 3.10+
-- Flask
-- NetworkX
-- Pytest
-
-## 🌐 Website Structure
-
-The website includes the following features:
-
-- Input form for a custom graph and agent valuations.
-- Option to generate random connected graphs with random values.
-- Clear explanation of the algorithm and its guarantees.
-- Result page displaying the allocation in a readable format.
-
-### Pages:
-
-- `/` (index): Input form + algorithm explanation.
-- `/about`: Detailed information about the paper and algorithm.
-- `result.html`: Shown after submitting input.
-
-## 🚀 Getting Started
+##  התקנה
 
 ```bash
+git clone https://github.com/your-username/graphical-cake-division.git
 cd graphical-cake-division
+
+python3 -m venv venv
+source venv/bin/activate  # או venv\Scripts\activate ב־Windows
+
 pip install -r requirements.txt
+```
+
+---
+
+##  הרצה
+
+```bash
 python app.py
 ```
 
-Then open your browser and visit:
+ואז לפתוח דפדפן בכתובת:  
+http://localhost:5050  
+או בכתובת האמיתית שלך:  
+http://10.112.4.121:5050/
+
+---
+
+##  מבנה הפרויקט
 
 ```
-http://127.0.0.1:5000
+project/
+│
+├── app.py                  # אפליקציית Flask הראשית
+├── algorithm.py            # האלגוריתם לתיוג רציף (ללא שינויים)
+├── templates/
+│   ├── index.html          # דף ראשי עם טופס וקלט
+│   └── about.html          # דף מידע נוסף (אופציונלי)
+├── requirements.txt
+└── README.md
 ```
 
-## 🧪 Running Tests
+---
 
-```bash
+##  הערות
 
- python -m pytest --verbose test_algorithm.py
+- הערכים הם לפי קודקודים, ולא לפי קשתות.
+- לא משנים את הקובץ algorithm.py (לפי דרישות המטלה).
+- החלוקה מבוצעת על פי פלט התיוג הרציף.
 
-```
+---
+
+##  מקורות
+
+- Cohen, Segal-Halevi, Steinhardt & Yaniv (2023)  
+  "Fair Division of Graphs"
+
+---
+
+
