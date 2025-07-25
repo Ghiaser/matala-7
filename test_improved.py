@@ -1,6 +1,7 @@
 import networkx as nx
 import random
-from performance_improvement.improved_algorithm import FastGraphicalCakeDivider
+from improved_algorithm import FastGraphicalCakeDivider
+
 
 def generate_connected_graph(n):
     while True:
