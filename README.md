@@ -1,90 +1,44 @@
-# Graphical Cake Division — חלוקה הוגנת של גרף
+# FairGraphDivider — Performance Evaluation
 
-זהו אתר Flask להדגמה של אלגוריתם לחלוקה הוגנת של גרף לפי המאמר "Fair Division of Graphs" (Cohen et al).  
-המערכת מאפשרת להזין או ליצור גרף, להגדיר ערכים לפי קודקודים לשני סוכנים, ולקבל פלט של חלוקה הוגנת של הקשתות באמצעות תיוג רציף וסימולציית סכין.
+This project extends the FairGraphDivider algorithm by adding a performance benchmark and an optimized implementation, as required by the final assignment: "שיפור ביצועים – מטלת פייתון".
 
- הדגמה חיה:  
-🔗 http://10.112.4.121:5050/
 
----
+##  Experiment Description
 
-## סקירה אלגוריתמית
+The file `experiments.py` benchmarks two methods:
 
-1. תיוג רציף של הקשתות — Contiguous Oriented Labeling  
-   מיושם בקובץ algorithm.py. תיוג הקשתות מתבצע לפי ear decomposition ומחזיר רשימת קשתות מכוונות עם מספרים סידוריים.
+1. `GraphicalCakeDivider` — the original algorithm from algorithm.py  
+2. `FastGraphicalCakeDivider` — an improved version with precomputed edge values
 
-2. חלוקה הוגנת — Cake Division  
-   מיושם בקובץ app.py לפי ערכים של קודקודים. סימולציית סכין מתבצעת לפי הערך המצטבר של הקשתות, כאשר כל קשת מקבלת את סכום הערכים של שני הקודקודים שלה.
+Each algorithm is evaluated on:
 
----
+- Varying graph sizes (n = 10 to 50)  
+- Average runtime  
+- Value per agent  
+- Minimum fairness (min value between agents)
 
-##  תכונות עיקריות
+Results are saved in CSV and shown in graphs.
 
--  הזנת גרף ידנית
--  יצירת גרף אקראי (עם שליטה על מספר הקודקודים)
--  הזנת ערכים לפי קודקוד לשני סוכנים
--  תצוגת גרף גרפית (vis.js)
--  תצוגת פלט ישירה ללא מעבר לעמוד אחר
--   ממשק מלא בעברית
+##  Running the Benchmark
 
----
+1. Install required libraries:
+pip install matplotlib pandas networkx
 
-##  התקנה
+2. Run the experiment script:
+python experiments.py
 
-```bash
-git clone https://github.com/your-username/graphical-cake-division.git
-cd graphical-cake-division
+3. This generates:
+- results.csv  
+- plot_runtime.png  
+- plot_min_fairness.png
 
-python3 -m venv venv
-source venv/bin/activate  # או venv\Scripts\activate ב־Windows
+## ⚙️ Improvements Made
 
-pip install -r requirements.txt
-```
+The optimized algorithm (`FastGraphicalCakeDivider`) improves performance by:
 
----
+- Precomputing edge values for each agent  
+- Avoiding redundant value calculations during division  
 
-##  הרצה
-
-```bash
-python app.py
-```
-
-ואז לפתוח דפדפן בכתובת:  
-http://localhost:5050  
-או בכתובת האמיתית שלך:  
-http://10.112.4.121:5050/
-
----
-
-##  מבנה הפרויקט
-
-```
-project/
-│
-├── app.py                  # אפליקציית Flask הראשית
-├── algorithm.py            # האלגוריתם לתיוג רציף (ללא שינויים)
-├── templates/
-│   ├── index.html          # דף ראשי עם טופס וקלט
-│   └── about.html          # דף מידע נוסף (אופציונלי)
-├── requirements.txt
-└── README.md
-```
-
----
-
-##  הערות
-
-- הערכים הם לפי קודקודים, ולא לפי קשתות.
-- לא משנים את הקובץ algorithm.py (לפי דרישות המטלה).
-- החלוקה מבוצעת על פי פלט התיוג הרציף.
-
----
-
-##  מקורות
-
-- Cohen, Segal-Halevi, Steinhardt & Yaniv (2023)  
-  "Fair Division of Graphs"
-
----
+The division strategy remains identical to the original (based on Section 4 of the paper).
 
 
