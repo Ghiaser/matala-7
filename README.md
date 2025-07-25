@@ -31,6 +31,8 @@ python experiments.py
 - results.csv  
 - plot_runtime.png  
 - plot_min_fairness.png
+
+  
  4.run test
   python test_improved.py
 
