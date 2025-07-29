@@ -49,15 +49,13 @@ The goal is to split the edges of the graph into two connected parts such that e
    
 2. Run the Flask app:
 
-python app.py
+python3 app.py
 
 3. Open your browser to:
 
    https://ghia48.serhan.csariel.xyz/
 
- 4.  Run unit tests with:
 
-    python -m unittest test_contiguous_labeling.py
 
   ## Project Structure
   project/
