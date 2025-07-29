@@ -4,7 +4,7 @@ This Flask web app demonstrates a fair division algorithm for graphs, based on t
 
 "Fair and Efficient Cake Division with Connected Pieces"  
 Xiaohui Bei and Warut Suksompong, 2019  
-https://arxiv.org/abs/1910.14129
+[https://arxiv.org/abs/1910.14129](https://arxiv.org/pdf/1910.14129#subsection.4.1)
 
 ---
 
