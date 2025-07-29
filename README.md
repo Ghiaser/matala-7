@@ -1,60 +1,66 @@
 # Graphical Cake Division — חלוקה הוגנת של גרף
 
-זהו אתר Flask להדגמה של אלגוריתם לחלוקה הוגנת של גרף לפי המאמר "Fair Division of Graphs" (Cohen et al).  
-המערכת מאפשרת להזין או ליצור גרף, להגדיר ערכים לפי קודקודים לשני סוכנים, ולקבל פלט של חלוקה הוגנת של הקשתות באמצעות תיוג רציף וסימולציית סכין.
+This Flask web app demonstrates a fair division algorithm for graphs, based on the paper:
 
- הדגמה חיה:  
-https://ghia48.serhan.csariel.xyz/
-
----
-
-## סקירה אלגוריתמית
-
-1. תיוג רציף של הקשתות — Contiguous Oriented Labeling  
-   מיושם בקובץ algorithm.py. תיוג הקשתות מתבצע לפי ear decomposition ומחזיר רשימת קשתות מכוונות עם מספרים סידוריים.
-
-2. חלוקה הוגנת — Cake Division  
-   מיושם בקובץ app.py לפי ערכים של קודקודים. סימולציית סכין מתבצעת לפי הערך המצטבר של הקשתות, כאשר כל קשת מקבלת את סכום הערכים של שני הקודקודים שלה.
+"Fair and Efficient Cake Division with Connected Pieces"  
+Xiaohui Bei and Warut Suksompong, 2019  
+https://arxiv.org/abs/1910.14129
 
 ---
 
-##  תכונות עיקריות
+## Project Overview
 
--  הזנת גרף ידנית
--  יצירת גרף אקראי (עם שליטה על מספר הקודקודים)
--  הזנת ערכים לפי קודקוד לשני סוכנים
--  תצוגת גרף גרפית (vis.js)
--  תצוגת פלט ישירה ללא מעבר לעמוד אחר
--   ממשק מלא בעברית
+The system allows:
 
----
+- Inputting a graph manually or generating a random connected graph  
+- Defining vertex valuations for two agents  
+- Producing a fair division of edges based on contiguous oriented labeling and knife simulation  
 
-##  התקנה
-
-```bash
-git clone https://github.com/your-username/graphical-cake-division.git
-cd graphical-cake-division
-
-python3 -m venv venv
-source venv/bin/activate  # או venv\Scripts\activate ב־Windows
-
-pip install -r requirements.txt
-```
+The goal is to split the edges of the graph into two connected parts such that each agent receives roughly half of the total value, calculated from vertex valuations.
 
 ---
 
-##  הרצה
+## Algorithm Summary
 
-```bash
+1. **Contiguous Oriented Labeling** (in `algorithm.py`):  
+   Labels edges continuously using ear decomposition, producing an ordered list of oriented edges.
+
+2. **Fair Division (in `app.py`):**  
+   Uses vertex valuations to simulate a knife moving over edges in order, assigning edges to agents based on cumulative vertex values of edges.
+
+---
+
+## Main Features
+
+- Manual edge and valuation input  
+- Random connected graph generation (default 5 nodes, probability 0.5)  
+- Vertex valuations input for two agents  
+- Graph visualization via vis-network  
+- Direct output display on the same page  
+- Hebrew interface support  
+
+---
+
+## Installation and Running
+
+1. Install dependencies:
+   
+   pip install -r requirements.txt
+   
+2. Run the Flask app:
+
 python app.py
-```
 
+3. Open your browser to:
 
+   https://ghia48.serhan.csariel.xyz/
 
-##  מבנה הפרויקט
+ 4.  Run unit tests with:
 
-```
-project/
+    python -m unittest test_contiguous_labeling.py
+
+  ## Project Structure
+  project/
 │
 ├── app.py                  # אפליקציית Flask הראשית
 ├── algorithm.py            # האלגוריתם לתיוג רציף 
@@ -63,11 +69,7 @@ project/
 │   └── about.html          # דף מידע נוסף 
 ├── requirements.txt
 └── README.md
-```
-
----
 
 
-
----
+    
 
