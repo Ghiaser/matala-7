@@ -22,7 +22,7 @@ The goal is to split the edges of the graph into two connected parts such that e
 
 ## Algorithm Summary
 
-1. **Contiguous Oriented Labeling** (in `algorithm.py`):  
+1. **Contiguous Oriented Labeling** (in `contiguous_labeling.py`):  
    Labels edges continuously using ear decomposition, producing an ordered list of oriented edges.
 
 2. **Fair Division (in `app.py`):**  
@@ -61,7 +61,7 @@ python3 app.py
   project/
 │
 ├── app.py                  # אפליקציית Flask הראשית
-├── algorithm.py            # האלגוריתם לתיוג רציף 
+├── contiguous_labeling.p   # האלגוריתם לתיוג רציף 
 ├── templates/
 │   ├── index.html          # דף ראשי עם טופס וקלט
 │   └── about.html          # דף מידע נוסף 
