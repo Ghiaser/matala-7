@@ -3,7 +3,7 @@ import csv
 import random
 import networkx as nx
 import matplotlib.pyplot as plt
-from algorithm import contiguous_oriented_labeling
+from contiguous_labeling import contiguous_oriented_labeling
 
 def generate_random_connected_graph(n, p=0.5):
     while True:
