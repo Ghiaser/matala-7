@@ -1,4 +1,4 @@
-from algorithm import contiguous_oriented_labeling
+from contiguous_labeling import contiguous_oriented_labeling
 
 class FastGraphicalCakeDivider:
     def __init__(self, graph, edge_values):
