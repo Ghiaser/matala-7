@@ -2,7 +2,7 @@ from flask import Flask, render_template, request
 import networkx as nx
 import random
 import logging
-from algorithm import contiguous_oriented_labeling
+from contiguous_labeling import contiguous_oriented_labeling
 
 # Configure logging
 logging.basicConfig(filename='logs.txt', level=logging.INFO,
