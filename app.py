@@ -65,10 +65,8 @@ def divide_by_vertex_valuation(G, val1, val2):
 
     part2 = [e for e in ordered_edges if e not in part1]
 
-    if sum1 >= total1 / 2:
-        return part1, part2
-    else:
-        return part2, part1
+    # Visualize the ordering of the edges
+    return part1, part2, ordered_edges  # Add ordered_edges for visualization
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -77,6 +75,7 @@ def index():
     edges_text = ''
     val1_text = ''
     val2_text = ''
+    ordered_edges = []
 
     if request.method == "POST":
         mode = request.form.get("mode")
@@ -103,11 +102,12 @@ def index():
             else:
                 raise ValueError("מצב לא חוקי.")
 
-            division = divide_by_vertex_valuation(G, val1, val2)
-            if division is None:
+            # ✅ קודם נבדוק אם הפונקציה לא החזירה None
+            result_tuple = divide_by_vertex_valuation(G, val1, val2)
+            if result_tuple is None:
                 raise ValueError("לא ניתן לתייג את הגרף או לבצע חלוקה הוגנת.")
 
-            group1, group2 = division
+            group1, group2, ordered_edges = result_tuple
 
             result = "תוצאה:\n"
             result += "\nסוכן 1:\n" + "\n".join(
@@ -119,7 +119,16 @@ def index():
             error = f"שגיאה: {str(e)}"
             logger.error("Error during processing: %s", str(e))
 
-    return render_template("index.html", result=result, error=error, edges_text=edges_text, val1_text=val1_text, val2_text=val2_text)
+    return render_template(
+        "index.html",
+        result=result,
+        error=error,
+        edges_text=edges_text,
+        val1_text=val1_text,
+        val2_text=val2_text,
+        ordered_edges=ordered_edges
+    )
+
 
 @app.route("/about")
 def about():
