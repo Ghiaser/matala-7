@@ -113,7 +113,9 @@
     const nodeCountInput = document.getElementById("random-node-count");
     const container = document.getElementById("network");
 
-    function drawGraph(edgeText) {
+    const orderedEdges = {{ ordered_edges|tojson | safe }};
+
+    function drawGraph(edgeText, orderedEdges) {
       const lines = edgeText.trim().split("\n");
       const edges = [];
       const nodes = new Set();
@@ -126,30 +128,71 @@
         nodes.add(b);
       }
 
+      const edgeData = edges.map((edge) => {
+        const index = orderedEdges.findIndex(
+          ([u, v]) =>
+            (u === edge.from && v === edge.to) ||
+            (v === edge.from && u === edge.to)
+        );
+        return {
+          from: edge.from,
+          to: edge.to,
+          arrows: "none",
+          color: index >= 0 ? { color: "#ff0000" } : { color: "#aaa" },
+          label: index >= 0 ? `${index + 1}` : "",
+          labelHighlightBold: false
+        };
+      });
+
       const data = {
         nodes: Array.from(nodes).map(id => ({ id, label: id })),
-        edges
+        edges: edgeData
       };
 
       const options = {
         nodes: {
           shape: "dot",
           size: 16,
-          color: "#007bff",
-          font: { size: 16 }
+          color: {
+            background: "#007bff",
+            border: "#0047ab"
+          },
+          borderWidth: 2,
+          font: {
+            size: 12,      // smaller font size than before
+            color: "#ffffff", // white text for better contrast
+            vadjust: -30    // slightly shift node label upward
+          }
         },
         edges: {
-          arrows: "to",
-          color: { color: "#aaa" }
+          arrows: { to: { enabled: true, scaleFactor: 1 } },
+          font: {
+            size: 14,
+            color: "black",
+            align: "top" // This is key: label on top of the edge curve
+          },
+          smooth: {
+            enabled: true,
+            type: "curvedCW",
+            roundness: 0.2
+          }
         },
         physics: { stabilization: true }
       };
 
+
       new vis.Network(container, data, options);
     }
 
-    edgesInput.addEventListener("input", () => drawGraph(edgesInput.value));
-    if (edgesInput.value.trim()) drawGraph(edgesInput.value);
+    // Load initial graph on page load
+    if (edgesInput.value.trim()) {
+      drawGraph(edgesInput.value, orderedEdges);
+    }
+
+    // Redraw on edge input change
+    edgesInput.addEventListener("input", () => {
+      drawGraph(edgesInput.value, orderedEdges);
+    });
 
     function generateClientRandom() {
       const numNodes = parseInt(nodeCountInput.value) || 5;
@@ -186,7 +229,7 @@
         if (visited.size === numNodes) {
           const edgeText = edges.map(([u, v]) => `${u} ${v}`).join("\n");
           edgesInput.value = edgeText;
-          drawGraph(edgeText);
+          drawGraph(edgesInput.value, orderedEdges);
 
           let val1Text = "";
           let val2Text = "";
