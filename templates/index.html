@@ -2,251 +2,191 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>חלוקה הוגנת של גרף</title>
+  <title>תיוג רציף מכוון לגרף</title>
   <script src="https://unpkg.com/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
-    }
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      max-width: 900px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    }
-    textarea {
-      width: 100%;
-      height: 100px;
-      direction: ltr;
-      font-family: monospace;
-    }
+    body { font-family: Arial, sans-serif; background:#f4f4f4; padding:20px; }
+    .container { background:#fff; padding:30px; border-radius:10px; max-width:900px; margin:auto; box-shadow:0 0 10px rgba(0,0,0,0.2); }
+    textarea { width:100%; height:120px; direction:ltr; font-family:monospace; }
     input[type="submit"], button {
-      padding: 10px 20px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 10px;
-      margin-left: 10px;
+      padding:10px 20px; background:#007bff; color:#fff;
+      border:none; border-radius:6px; cursor:pointer; margin-top:10px; margin-left:10px;
     }
     input[type="number"] {
-      padding: 6px;
-      width: 60px;
-      margin-right: 10px;
+      padding:6px; width:90px; margin-inline-start:8px; margin-inline-end:16px;
     }
-    label.inline {
-      display: inline-block;
-      margin-top: 10px;
-    }
-    .graph-container {
-      height: 400px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      margin-top: 20px;
-    }
-    .footer {
-      margin-top: 20px;
-    }
-    .error {
-      color: red;
-      font-weight: bold;
-    }
-    pre {
-      background: #eee;
-      padding: 10px;
-      border-radius: 6px;
-      direction: ltr;
-      white-space: pre-wrap;
-    }
+    label.inline { display:inline-block; margin-top:10px; }
+    .graph-container { height:420px; border:1px solid #ccc; border-radius:6px; margin-top:20px; }
+    .error { color:red; font-weight:bold; }
+    pre { background:#eee; padding:10px; border-radius:6px; direction:ltr; white-space:pre-wrap; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>חלוקה הוגנת של גרף</h1>
+    <h1>תיוג רציף מכוון לגרף</h1>
 
     {% if error %}
       <p class="error">{{ error }}</p>
     {% endif %}
 
-    <form method="POST" id="manual-form">
-      <input type="hidden" name="mode" value="manual">
-
+    <form method="POST">
       <label>קשתות הגרף (a b):</label><br />
-      <textarea name="edges" id="edges-input" placeholder="0 1\n1 2\n2 3\n0 3">{{ edges_text|default('') }}</textarea><br />
+      <textarea name="edges" id="edges-input" placeholder="1 2
+2 3
+3 1
+3 4">{{ edges_text|default('') }}</textarea><br />
 
-      <label>ערכים של סוכן 1 (קודקוד ערך):</label><br />
-      <textarea name="val1" id="val1-input" placeholder="A 0.3\nB 0.5\nC 0.2">{{ val1_text|default('') }}</textarea><br />
+      <!-- Client-side random graph controls -->
+      <label class="inline">מס’ קודקודים:</label>
+      <input type="number" id="rand-nodes" value="6" min="2" max="50" />
 
-      <label>ערכים של סוכן 2 (קודקוד ערך):</label><br />
-      <textarea name="val2" id="val2-input" placeholder="A 0.4\nB 0.3\nC 0.3">{{ val2_text|default('') }}</textarea><br />
+      <label class="inline">הסתברות קשת (p):</label>
+      <input type="number" id="rand-prob" value="0.35" min="0.05" max="0.95" step="0.05" />
 
-      <label class="inline">מספר קודקודים אקראי:</label>
-      <input type="number" id="random-node-count" value="5" min="2" max="20" />
+      <button type="button" id="btn-generate">צור גרף אקראי (לקוח)</button>
+
       <br />
-
-      <input type="submit" value="חשב חלוקה">
-      <button type="button" onclick="generateClientRandom()">צור גרף אקראי</button>
+      <input type="submit" value="חשב תיוג">
     </form>
 
     <div class="graph-container" id="network"></div>
 
-    {% if result %}
+    {% if status_text %}
       <hr />
-      <h3>תוצאה:</h3>
-      <pre>{{ result }}</pre>
+      <h3>סטטוס הגרף</h3>
+      <pre>{{ status_text }}</pre>
     {% endif %}
 
-    <div class="footer">
-      <a href="{{ url_for('about') }}">למידע נוסף</a>
-    </div>
+    {% if labeling_text %}
+      <h3>תיוג רציף</h3>
+      <pre>{{ labeling_text }}</pre>
+    {% endif %}
   </div>
 
   <script>
     const edgesInput = document.getElementById("edges-input");
-    const val1Input = document.getElementById("val1-input");
-    const val2Input = document.getElementById("val2-input");
-    const nodeCountInput = document.getElementById("random-node-count");
-    const container = document.getElementById("network");
+    const container  = document.getElementById("network");
 
+    // From server after POST: [[u,v], ...] oriented order
     const orderedEdges = {{ ordered_edges|tojson | safe }};
 
-    function drawGraph(edgeText, orderedEdges) {
-      const lines = edgeText.trim().split("\n");
-      const edges = [];
-      const nodes = new Set();
+    function drawGraph(edgeText, orientedOrder) {
+      const lines    = (edgeText || "").trim().split("\n").filter(Boolean);
+      const nodes    = new Set();
+      const edgesRaw = [];
 
       for (const line of lines) {
-        const [a, b] = line.trim().split(/\s+/);
-        if (!a || !b) continue;
-        edges.push({ from: a, to: b });
-        nodes.add(a);
-        nodes.add(b);
+        const [a0, b0] = line.trim().split(/\s+/);
+        if (!a0 || !b0) continue;
+        const a = String(a0), b = String(b0);
+        nodes.add(a); nodes.add(b);
+        edgesRaw.push([a, b]);
       }
 
-      const edgeData = edges.map((edge) => {
-        const index = orderedEdges.findIndex(
-          ([u, v]) =>
-            (u === edge.from && v === edge.to) ||
-            (v === edge.from && u === edge.to)
-        );
+      const edges = edgesRaw.map(([a, b]) => {
+        // find oriented order index (if any)
+        let orderIdx = -1, oriented = null;
+        for (let i = 0; i < orientedOrder.length; i++) {
+          const [u, v] = orientedOrder[i].map(String);
+          if ((u === a && v === b) || (u === b && v === a)) { orderIdx = i; oriented = [u, v]; break; }
+        }
+
+        // Label is JUST the order number (if present). Otherwise empty.
+        const labelText = (orderIdx >= 0) ? String(orderIdx + 1) : "";
+
         return {
-          from: edge.from,
-          to: edge.to,
-          arrows: "none",
-          color: index >= 0 ? { color: "#ff0000" } : { color: "#aaa" },
-          label: index >= 0 ? `${index + 1}` : "",
-          labelHighlightBold: false
+          from: oriented ? oriented[0] : a,
+          to:   oriented ? oriented[1] : b,
+          label: labelText,
+          labelHighlightBold: false,
+          font: { size: 14, color: "black", align: "top" },
+          arrows: { },
+          smooth: { enabled: true, type: "curvedCW", roundness: 0.2 },
+          width: 2,
+          color: { color: orderIdx >= 0 ? "#ff0000" : "#aaaaaa" }
         };
       });
 
       const data = {
         nodes: Array.from(nodes).map(id => ({ id, label: id })),
-        edges: edgeData
+        edges
       };
 
       const options = {
         nodes: {
-          shape: "dot",
-          size: 16,
-          color: {
-            background: "#007bff",
-            border: "#0047ab"
-          },
+          shape: "dot", size: 16,
+          color: { background: "#007bff", border: "#0047ab" },
           borderWidth: 2,
-          font: {
-            size: 12,      // smaller font size than before
-            color: "#ffffff", // white text for better contrast
-            vadjust: -30    // slightly shift node label upward
-          }
+          font: { size: 12, color: "#ffffff", vadjust: -30 }
         },
-        edges: {
-          arrows: { to: { enabled: true, scaleFactor: 1 } },
-          font: {
-            size: 14,
-            color: "black",
-            align: "top" // This is key: label on top of the edge curve
-          },
-          smooth: {
-            enabled: true,
-            type: "curvedCW",
-            roundness: 0.2
-          }
-        },
+        edges: {},
         physics: { stabilization: true }
       };
-
 
       new vis.Network(container, data, options);
     }
 
-    // Load initial graph on page load
-    if (edgesInput.value.trim()) {
-      drawGraph(edgesInput.value, orderedEdges);
-    }
+    // Draw once on load (server may have oriented order after POST)
+    drawGraph(edgesInput.value, orderedEdges);
 
-    // Redraw on edge input change
-    edgesInput.addEventListener("input", () => {
-      drawGraph(edgesInput.value, orderedEdges);
-    });
+    // Redraw when user edits edges locally (no oriented order until you submit)
+    edgesInput.addEventListener("input", () => drawGraph(edgesInput.value, []));
 
-    function generateClientRandom() {
-      const numNodes = parseInt(nodeCountInput.value) || 5;
-      const edgeProb = 0.5;
-      const maxTries = 20;
+    // -------- Client-side random connected ER(n,p) generator with 1..n labels --------
+    function generateRandomConnectedER(n = 6, p = 0.35, retries = 40) {
+      n = Math.max(2, Math.min(50, Math.floor(n)));
+      p = Math.max(0.01, Math.min(0.99, Number(p)));
 
-      for (let t = 0; t < maxTries; t++) {
+      function attempt() {
+        const nodes = Array.from({ length: n }, (_, i) => String(i + 1)); // "1".."n"
         const edges = [];
-        const nodes = Array.from({ length: numNodes }, (_, i) => i.toString());
-
-        for (let i = 0; i < numNodes; i++) {
-          for (let j = i + 1; j < numNodes; j++) {
-            if (Math.random() < edgeProb) edges.push([nodes[i], nodes[j]]);
+        // ER(n, p)
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            if (Math.random() < p) edges.push([nodes[i], nodes[j]]);
           }
         }
-
-        const G = {};
-        nodes.forEach(n => G[n] = []);
-        edges.forEach(([u, v]) => {
-          G[u].push(v);
-          G[v].push(u);
-        });
-
-        const visited = new Set();
+        // connectivity check (DFS)
+        const adj = Object.fromEntries(nodes.map(v => [v, []]));
+        edges.forEach(([u, v]) => { adj[u].push(v); adj[v].push(u); });
+        const seen = new Set();
         const stack = [nodes[0]];
         while (stack.length) {
-          const node = stack.pop();
-          if (!visited.has(node)) {
-            visited.add(node);
-            G[node].forEach(n => !visited.has(n) && stack.push(n));
-          }
+          const u = stack.pop();
+          if (seen.has(u)) continue;
+          seen.add(u);
+          for (const w of adj[u]) if (!seen.has(w)) stack.push(w);
         }
-
-        if (visited.size === numNodes) {
-          const edgeText = edges.map(([u, v]) => `${u} ${v}`).join("\n");
-          edgesInput.value = edgeText;
-          drawGraph(edgesInput.value, orderedEdges);
-
-          let val1Text = "";
-          let val2Text = "";
-          nodes.forEach(n => {
-            const v1 = (Math.random()).toFixed(2);
-            const v2 = (Math.random()).toFixed(2);
-            val1Text += `${n} ${v1}\n`;
-            val2Text += `${n} ${v2}\n`;
-          });
-          val1Input.value = val1Text.trim();
-          val2Input.value = val2Text.trim();
-
-          return;
-        }
+        return (seen.size === n) ? edges : null;
       }
 
-      alert("נכשל ביצירת גרף קשיר. נסה שוב.");
+      for (let k = 0; k < retries; k++) {
+        const edges = attempt();
+        if (edges) return edges;
+      }
+      // fallback: cycle 1..n
+      const nodes = Array.from({ length: n }, (_, i) => String(i + 1));
+      const edges = [];
+      for (let i = 0; i < n; i++) {
+        edges.push([nodes[i], nodes[(i + 1) % n]]);
+      }
+      return edges;
+    }
+
+    // Hook up the button
+    const btnGen = document.getElementById("btn-generate");
+    const inpN   = document.getElementById("rand-nodes");
+    const inpP   = document.getElementById("rand-prob");
+
+    if (btnGen) {
+      btnGen.addEventListener("click", () => {
+        const n = parseInt(inpN.value, 10) || 6;
+        const p = parseFloat(inpP.value) || 0.35;
+        const edges = generateRandomConnectedER(n, p);
+        edgesInput.value = edges.map(([u, v]) => `${u} ${v}`).join("\n");
+        // Draw without oriented order (order will appear after you click "חשב תיוג")
+        drawGraph(edgesInput.value, []);
+      });
     }
   </script>
 </body>
