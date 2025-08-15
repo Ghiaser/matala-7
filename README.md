@@ -49,7 +49,7 @@ The goal is to split the edges of the graph into two connected parts such that e
    
 2. Run the Flask app:
 
-python3 app.py
+python app.py
 
 3. Open your browser to:
 
