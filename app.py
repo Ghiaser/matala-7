@@ -1,138 +1,161 @@
 from flask import Flask, render_template, request
 import networkx as nx
-import random
 import logging
-from contiguous_labeling import contiguous_oriented_labeling
 
-# Configure logging
+# Import your core functions from contiguous_labeling.py
+from contiguous_labeling import (
+    contiguous_oriented_labeling,
+    verify_contiguous_labeling,
+    find_uv_to_make_bridgeless,
+)
+
 logging.basicConfig(filename='logs.txt', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+# ---------- Helpers ----------
+
 def parse_edges(text):
+    """
+    Reads lines 'u v'. Returns (edges, all_int) where all_int indicates
+    whether all node labels could be parsed as integers.
+    """
     edges = []
-    for line in text.strip().splitlines():
+    text = (text or "").strip()
+    if not text:
+        return edges, False
+
+    all_int = True
+    for line in text.splitlines():
         parts = line.strip().split()
-        if len(parts) == 2:
-            u, v = parts
-            edges.append((u, v))
-    return edges
+        if len(parts) != 2:
+            continue
+        u, v = parts
+        try:
+            u = int(u)
+        except:
+            all_int = False
+        try:
+            v = int(v)
+        except:
+            all_int = False
+        edges.append((u, v))
+    return edges, all_int
 
-def parse_vertex_valuation(text):
-    val = {}
-    for line in text.strip().splitlines():
-        parts = line.strip().split()
-        if len(parts) == 2:
-            node, value = parts
-            val[node] = float(value)
-    return val
 
-def generate_random_graph(num_nodes=5, prob=0.5):
-    G = nx.erdos_renyi_graph(num_nodes, prob)
-    while not nx.is_connected(G):
-        G = nx.erdos_renyi_graph(num_nodes, prob)
-    G = nx.relabel_nodes(G, lambda x: str(x))
-    return G
+def relabel_one_based_if_numeric(G: nx.Graph, all_int: bool) -> nx.Graph:
+    """
+    If all node labels are integers (maybe starting at 0), relabel nodes to 1..n
+    in ascending order for nicer display (1,2,3,...).
+    """
+    if not all_int or G.number_of_nodes() == 0:
+        return G
+    nodes_sorted = sorted(G.nodes())
+    mapping = {node: i + 1 for i, node in enumerate(nodes_sorted)}
+    return nx.relabel_nodes(G, mapping, copy=True)
 
-def generate_random_vertex_valuations(G):
-    val1 = {}
-    val2 = {}
-    for v in G.nodes():
-        val1[v] = round(random.uniform(0, 1), 2)
-        val2[v] = round(random.uniform(0, 1), 2)
-    return val1, val2
 
-def divide_by_vertex_valuation(G, val1, val2):
+def build_labeling_and_status(G: nx.Graph):
+    """
+    Returns (labeling, ordered_edges, status_dict)
+    labeling: list of (label_idx, u, v) directed from u(=i⁻) to v(=i⁺)
+    ordered_edges: [(u, v), ...] same order/orientation as labeling
+    status_dict: fields for UI
+    """
+    status = {
+        "n": G.number_of_nodes(),
+        "m": G.number_of_edges(),
+        "connected": nx.is_connected(G) if G.number_of_nodes() > 0 else False,
+        "bridgeless": False,
+        "almost_bridgeless": False,
+        "contiguous": False,
+        "uv_edge": None,
+        "error": None,
+    }
+
+    if not status["connected"]:
+        status["error"] = "הגרף איננו קשיר."
+        return None, [], status
+
+    # Bridges & almost-bridgeless (strict definition: exactly one added edge fixes all bridges)
+    bridges = list(nx.bridges(G))
+    status["bridgeless"] = (len(bridges) == 0)
+    uv = find_uv_to_make_bridgeless(G)
+    status["uv_edge"] = uv
+    status["almost_bridgeless"] = (uv is not None)
+
     labeling = contiguous_oriented_labeling(G)
     if labeling is None:
-        return None
+        status["error"] = "נכשל ביצירת תיוג רציף לגרף."
+        return None, [], status
 
+    status["contiguous"] = verify_contiguous_labeling(G, labeling)
     ordered_edges = [(u, v) for _, u, v in labeling]
-    total1 = sum(val1.get(u, 0) + val1.get(v, 0) for u, v in ordered_edges)
-    total2 = sum(val2.get(u, 0) + val2.get(v, 0) for u, v in ordered_edges)
+    return labeling, ordered_edges, status
 
-    sum1 = sum2 = 0
-    part1 = []
 
-    for u, v in ordered_edges:
-        part1.append((u, v))
-        sum1 += val1.get(u, 0) + val1.get(v, 0)
-        sum2 += val2.get(u, 0) + val2.get(v, 0)
-        if sum1 >= total1 / 2 or sum2 >= total2 / 2:
-            break
-
-    part2 = [e for e in ordered_edges if e not in part1]
-
-    # Visualize the ordering of the edges
-    return part1, part2, ordered_edges  # Add ordered_edges for visualization
+# ---------- Routes ----------
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    result = None
+    edges_text = ""
     error = None
-    edges_text = ''
-    val1_text = ''
-    val2_text = ''
-    ordered_edges = []
+    status_text = None
+    labeling_text = None
+    ordered_edges = []  # [(u,v), ...] oriented order for client visualization
 
     if request.method == "POST":
-        mode = request.form.get("mode")
-
         try:
-            if mode == "manual":
-                edges_text = request.form.get("edges", "")
-                val1_text = request.form.get("val1", "")
-                val2_text = request.form.get("val2", "")
-                edges = parse_edges(edges_text)
-                val1 = parse_vertex_valuation(val1_text)
-                val2 = parse_vertex_valuation(val2_text)
-                G = nx.Graph()
-                G.add_edges_from(edges)
+            edges_text = request.form.get("edges", "")
+            edges, all_int = parse_edges(edges_text)
 
-            elif mode == "random":
-                G = generate_random_graph()
-                val1, val2 = generate_random_vertex_valuations(G)
-                edges = list(G.edges())
-                edges_text = "\n".join(f"{u} {v}" for u, v in edges)
-                val1_text = "\n".join(f"{v} {val1[v]}" for v in G.nodes())
-                val2_text = "\n".join(f"{v} {val2[v]}" for v in G.nodes())
+            G = nx.Graph()
+            G.add_edges_from(edges)
 
-            else:
-                raise ValueError("מצב לא חוקי.")
+            # Remap to 1..n if nodes are all numeric
+            G = relabel_one_based_if_numeric(G, all_int)
 
-            # ✅ קודם נבדוק אם הפונקציה לא החזירה None
-            result_tuple = divide_by_vertex_valuation(G, val1, val2)
-            if result_tuple is None:
-                raise ValueError("לא ניתן לתייג את הגרף או לבצע חלוקה הוגנת.")
+            labeling, ordered_edges, status = build_labeling_and_status(G)
 
-            group1, group2, ordered_edges = result_tuple
+            # Status text
+            status_lines = [
+                f"מספר קודקודים: {status['n']}",
+                f"מספר קשתות: {status['m']}",
+                f"קשיר: {'כן' if status['connected'] else 'לא'}",
+                f"ללא-גשרים: {'כן' if status['bridgeless'] else 'לא'}",
+                f"כמעט ללא-גשרים (הגדרה מחמירה): {'כן' if status['almost_bridgeless'] else 'לא'}",
+                f"תיוג רציף נמצא: {'כן' if status['contiguous'] else 'לא'}",
+            ]
+            if status["uv_edge"]:
+                status_lines.append(f"קשת להוספה שתסיר גשרים: {status['uv_edge']}")
+            if status["error"]:
+                status_lines.append(f"שגיאה: {status['error']}")
+            status_text = "\n".join(status_lines)
 
-            result = "תוצאה:\n"
-            result += "\nסוכן 1:\n" + "\n".join(
-                f"{u} - {v} (ערך: {val1.get(u, 0)+val1.get(v, 0):.2f})" for u, v in group1)
-            result += "\n\nסוכן 2:\n" + "\n".join(
-                f"{u} - {v} (ערך: {val2.get(u, 0)+val2.get(v, 0):.2f})" for u, v in group2)
+            if labeling:
+                lab_lines = [f"{i}. {u}⁻ → {v}⁺" for i, (_, u, v) in enumerate(labeling, start=1)]
+                labeling_text = "תיוג (סדר וקוטביות הקשתות):\n" + "\n".join(lab_lines)
 
         except Exception as e:
             error = f"שגיאה: {str(e)}"
-            logger.error("Error during processing: %s", str(e))
+            logger.exception("Error during processing")
 
     return render_template(
         "index.html",
-        result=result,
         error=error,
         edges_text=edges_text,
-        val1_text=val1_text,
-        val2_text=val2_text,
-        ordered_edges=ordered_edges
+        status_text=status_text,
+        labeling_text=labeling_text,
+        ordered_edges=ordered_edges,  # used to draw arrow direction + **order numbers only**
     )
 
 
 @app.route("/about")
 def about():
     return render_template("about.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5050)
