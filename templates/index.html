@@ -8,9 +8,10 @@
     body { font-family: Arial, sans-serif; background:#f4f4f4; padding:20px; }
     .container { background:#fff; padding:30px; border-radius:10px; max-width:900px; margin:auto; box-shadow:0 0 10px rgba(0,0,0,0.2); }
     textarea { width:100%; height:120px; direction:ltr; font-family:monospace; }
-    input[type="submit"], button {
+    input[type="submit"], button, .btn-link {
       padding:10px 20px; background:#007bff; color:#fff;
       border:none; border-radius:6px; cursor:pointer; margin-top:10px; margin-left:10px;
+      text-decoration:none; display:inline-block;
     }
     input[type="number"] {
       padding:6px; width:90px; margin-inline-start:8px; margin-inline-end:16px;
@@ -24,6 +25,9 @@
 <body>
   <div class="container">
     <h1>תיוג רציף מכוון לגרף</h1>
+
+    <!-- כפתור אודות -->
+    <a href="{{ url_for('about') }}" class="btn-link">אודות</a>
 
     {% if error %}
       <p class="error">{{ error }}</p>
@@ -84,14 +88,12 @@
       }
 
       const edges = edgesRaw.map(([a, b]) => {
-        // find oriented order index (if any)
         let orderIdx = -1, oriented = null;
         for (let i = 0; i < orientedOrder.length; i++) {
           const [u, v] = orientedOrder[i].map(String);
           if ((u === a && v === b) || (u === b && v === a)) { orderIdx = i; oriented = [u, v]; break; }
         }
 
-        // Label is JUST the order number (if present). Otherwise empty.
         const labelText = (orderIdx >= 0) ? String(orderIdx + 1) : "";
 
         return {
@@ -126,27 +128,21 @@
       new vis.Network(container, data, options);
     }
 
-    // Draw once on load (server may have oriented order after POST)
     drawGraph(edgesInput.value, orderedEdges);
-
-    // Redraw when user edits edges locally (no oriented order until you submit)
     edgesInput.addEventListener("input", () => drawGraph(edgesInput.value, []));
 
-    // -------- Client-side random connected ER(n,p) generator with 1..n labels --------
     function generateRandomConnectedER(n = 6, p = 0.35, retries = 40) {
       n = Math.max(2, Math.min(50, Math.floor(n)));
       p = Math.max(0.01, Math.min(0.99, Number(p)));
 
       function attempt() {
-        const nodes = Array.from({ length: n }, (_, i) => String(i + 1)); // "1".."n"
+        const nodes = Array.from({ length: n }, (_, i) => String(i + 1));
         const edges = [];
-        // ER(n, p)
         for (let i = 0; i < n; i++) {
           for (let j = i + 1; j < n; j++) {
             if (Math.random() < p) edges.push([nodes[i], nodes[j]]);
           }
         }
-        // connectivity check (DFS)
         const adj = Object.fromEntries(nodes.map(v => [v, []]));
         edges.forEach(([u, v]) => { adj[u].push(v); adj[v].push(u); });
         const seen = new Set();
@@ -164,7 +160,7 @@
         const edges = attempt();
         if (edges) return edges;
       }
-      // fallback: cycle 1..n
+
       const nodes = Array.from({ length: n }, (_, i) => String(i + 1));
       const edges = [];
       for (let i = 0; i < n; i++) {
@@ -173,7 +169,6 @@
       return edges;
     }
 
-    // Hook up the button
     const btnGen = document.getElementById("btn-generate");
     const inpN   = document.getElementById("rand-nodes");
     const inpP   = document.getElementById("rand-prob");
@@ -184,7 +179,6 @@
         const p = parseFloat(inpP.value) || 0.35;
         const edges = generateRandomConnectedER(n, p);
         edgesInput.value = edges.map(([u, v]) => `${u} ${v}`).join("\n");
-        // Draw without oriented order (order will appear after you click "חשב תיוג")
         drawGraph(edgesInput.value, []);
       });
     }
